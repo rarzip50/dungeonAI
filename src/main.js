@@ -81,7 +81,7 @@ function tick(timestamp) {
   const context = canvas.getContext("2d");
   context.fillStyle = "black";
   context.fillRect(0, 0, canvas.width, canvas.height);
-s
+
   levels[currentLevel].draw(canvas, context, camera, visibilityType);
 
   if (takeScreenshot) {
