@@ -64,7 +64,7 @@ export default class Level {
       stairs.up.y * tileSize + tileSize / 2 - this.player.size.y / 2;
   */
   }
-d
+
   setPlayersPosition(players){
     for(let i=0; i<players.length; i++){
       let stairs = this.dungeon.getStairs();
