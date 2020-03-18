@@ -22,23 +22,22 @@ export default class Dungeon {
     this.roomGrid = [];
   }
 
-  getStairs() {
+  getStairs(team) {
     let result = { up: null, down: null };
-    for (let i = 0; i < this.rooms.length; i++) {
-      let r = this.rooms[i];
-
-      if (r.hasStairs()) {
+    let r;
+    if(team === "A"){
+      r = this.rooms[0];
+    }else
+      r = this.rooms[this.rooms.length-1];
         for (let y = 0; y < r.size.y; y++) {
           for (let x = 0; x < r.size.x; x++) {
-            if (r.tiles[y][x] === tiles.ammo) {
+            if (r.tiles[y][x] === tiles.floor) {
               result.up = { x: r.pos.x + x, y: r.pos.y + y };
-            } else if (r.tiles[y][x] === tiles.ammo) {
+            } else if (r.tiles[y][x] === tiles.medic) {
               result.down = { x: r.pos.x + x, y: r.pos.y + y };
             }
           }
         }
-      }
-    }
     return result;
   }
 
@@ -56,6 +55,7 @@ export default class Dungeon {
 
     // seed the map with a starting randomly sized room in the center of the map
     let room = this.createRandomRoom();
+    room.team = "A";
     room.pos = {
       x: floor(this.size.x / 2) - floor(room.size.x / 2),
       y: floor(this.size.y / 2) - floor(room.size.y / 2),
@@ -69,10 +69,8 @@ export default class Dungeon {
       (this.maxNumRooms <= 0 || this.rooms.length < this.maxNumRooms) &&
       iter-- > 0
     ) {
-      let medical = Math.floor(Math.random() *2);
-      let ammo = Math.floor(Math.random() *2);
 
-      this.generateRoom(medical, ammo);
+      this.generateRoom();
     }
 
     // now we want to randomly add doors between some of the rooms and other rooms they touch
@@ -92,6 +90,7 @@ export default class Dungeon {
     
     // add medications randomly
     this.addAmmoOrMedic();
+    this.rooms[this.rooms.length-1].team = "B";
     /*if (this.addmedic) {
       this.addStairs(tiles.medic);
     }
@@ -423,6 +422,7 @@ export default class Dungeon {
       // try to add it. if successful, add the door between the rooms and break the loop
       if (this.addRoom(room)) {
         this.addDoor(this.findNewDoorLocation(room, result.target));
+        
         //if(medical)
          // this.addStairs(tiles.ammo);
         //if(ammo)

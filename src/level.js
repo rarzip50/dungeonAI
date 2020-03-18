@@ -33,14 +33,15 @@ export default class Level {
 
     this.players = [
       {
-        pos: { x: 50, y: 50 },
-        size: { x: 30, y: 12 },
+        pos: { x: 0, y: 0 },
+        size: { x: 12, y: 12 },
         speed: 175,
         color: "#0CED13",
         onStairs: true,
         health: 100,
         ammo: 20,
-        id: 1
+        id: 1,
+        team: "A"
       },
       {
         pos: { x: 0, y: 0 },
@@ -50,24 +51,18 @@ export default class Level {
         onStairs: true,
         health: 100,
         ammo: 20,
-        id: 2
+        id: 2,
+        team: "B"
       }
     ];
 
     // place the player at the up stair case
     this.setPlayersPosition(this.players);
-    /*
-    let stairs = this.dungeon.getStairs();
-    this.player.pos.x =
-      stairs.up.x * tileSize + tileSize / 2 - this.player.size.x / 2;
-    this.player.pos.y =
-      stairs.up.y * tileSize + tileSize / 2 - this.player.size.y / 2;
-  */
   }
 
   setPlayersPosition(players){
     for(let i=0; i<players.length; i++){
-      let stairs = this.dungeon.getStairs();
+      let stairs = this.dungeon.getStairs(players[i].team);
       players[i].pos.x =
         stairs.up.x * tileSize + tileSize / 2 - players[i].size.x / 2;
       players[i].pos.y =
@@ -314,7 +309,6 @@ export default class Level {
 
     // draw the players
     for(let i=0; i<this.players.length; i++){
-      console.log(this.players[i])
       context.fillStyle = this.players[i].color;
       context.fillRect(
         floor(this.players[i].pos.x - camera.x),

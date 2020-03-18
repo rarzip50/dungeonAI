@@ -5,6 +5,7 @@ export default class Room {
     this.size = { x: width, y: height };
     this.pos = { x: 0, y: 0 };
     this.tiles = [];
+    this.team = "";
 
     // surround the room with walls, and fill the rest with floors.
     for (let y = 0; y < this.size.y; y++) {
