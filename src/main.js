@@ -36,6 +36,7 @@ window.addEventListener(
 );
 
 let levels = [new Level()];
+console.log("here");
 let currentLevel = 0;
 let visibilityType = "none";
 let takeScreenshot = false;
@@ -64,7 +65,7 @@ function tick(timestamp) {
   }
   const delta = (timestamp - prevTime) / 1000.0;
   prevTime = timestamp;
-
+  
   const change = levels[currentLevel].update(delta, keysDown);
   //if player has stepped on health tile
   if(change === 1){

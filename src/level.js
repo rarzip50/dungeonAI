@@ -11,6 +11,7 @@ export default class Level {
     // create a dungeon
     this.dungeon = new Dungeon(100, 100);
     this.dungeon.generate();
+    this.counter = 1;
 
     // the current collision map for the dungeon
     this.collisionMap = this.dungeon.getCollisionMap();
@@ -41,7 +42,8 @@ export default class Level {
         health: 100,
         ammo: 20,
         id: 1,
-        team: "A"
+        team: "A",
+        pathToTarget: null
       },
       {
         pos: { x: 0, y: 0 },
@@ -52,12 +54,22 @@ export default class Level {
         health: 100,
         ammo: 20,
         id: 2,
-        team: "B"
+        team: "B",
+        pathToTarget: null
       }
     ];
 
     // place the player at the up stair case
     this.setPlayersPosition(this.players);
+    this.updatePlayerPathToTarget(this.players[0], this.players[1].pos)
+    //calculate paths to targets of all players
+    //for(let i=0; i<this.players.length; i++){
+      //this.updatePlayerPathToTarget(this.players[i], this.players[1].pos)
+    //}
+  }
+
+  updatePlayerPathToTarget(player, targetPos){
+    player.pathToTarget = this.aStar2(player.pos, targetPos);
   }
 
   setPlayersPosition(players){
@@ -68,8 +80,8 @@ export default class Level {
       players[i].pos.y =
         stairs.up.y * tileSize + tileSize / 2 - players[i].size.y / 2;
     }
-
   }
+
   width() {
     return this.dungeon.size.x * tileSize;
   }
@@ -88,24 +100,29 @@ export default class Level {
     // handle input to move the player
     let move = { x: 0, y: 0 };
     if (keys.left in keysDown) {
-      move.x -= this.player.speed * elapsed;
+      move.x -= this.players[0].speed * 0.02;
     }
     if (keys.right in keysDown) {
-      move.x += this.player.speed * elapsed;
+      move.x += this.players[0].speed * 0.02;
     }
     if (keys.up in keysDown) {
-      move.y -= this.player.speed * elapsed;
+      move.y -= this.players[0].speed * 0.02;
     }
     if (keys.down in keysDown) {
-      move.y += this.player.speed * elapsed;
+      move.y += this.players[0].speed * 0.02;
     }
 
     // collide the player against the dungeon
-    this.player.pos = this.moveEntity(this.player.pos, this.player.size, move);
-
+    //get the next move from global path to target of relevnt player
+    //this.players[0].pos = this.moveEntity(this.players[0].pos, this.players[0].size, move);
+    
+    if(this.counter % 2 === 0 || this.counter === 1)
+      this.players[0].pos = this.players[0].pathToTarget.shift();
+    this.counter ++;
+    //console.log(this.players[0].pos)
     // compute the player's center
-    let cx = floor((this.player.pos.x + this.player.size.x / 2) / tileSize);
-    let cy = floor((this.player.pos.y + this.player.size.y / 2) / tileSize);
+    let cx = floor((this.players[0].pos.x + this.players[0].size.x / 2) / tileSize);
+    let cy = floor((this.players[0].pos.y + this.players[0].size.y / 2) / tileSize);
 
     // the return value for the destination. -1 means go up a floor, 1 means go down a floor
     let dest = 0;
@@ -136,7 +153,7 @@ export default class Level {
       if (r.tiles[ly][lx] === tiles.medic) {
         onStairs = true;
 
-        if (!this.player.onStairs) {
+        if (!this.players[0].onStairs) {
           dest = 1;
           break;
         }
@@ -144,10 +161,156 @@ export default class Level {
     }
 
     // update the player's "onStairs" property
-    this.player.onStairs = onStairs;
+    this.players[0].onStairs = onStairs;
 
     // return our destination
     return dest;
+  }
+
+  isInSet(jsonObject, jsonSet){
+    if(jsonSet.find((element)=>element.x === jsonObject.x && element.y === jsonObject.y) !== undefined)
+      return true;
+    return false;
+  }
+  //updates the path of the requested player
+  aStar2(playerPos, targetPos){
+    let closedSet = [];
+    let startNodeH = Math.sqrt(Math.pow((playerPos.x - targetPos.x),2) + Math.pow((playerPos.y - targetPos.y),2));
+    let startNode = {
+      gScore:0,
+      fScore:startNodeH,
+      x: playerPos.x,
+      y: playerPos.y,
+      cameFrom: "START"
+    }
+    let openSet = [];//prioritized
+    openSet.push(startNode);
+    let current;
+    //console.log("before"+Date.now())
+    while(openSet.length !== 0){
+      current = openSet.shift();//current has lowest fScore and removes from openSet
+      //got to target - packMan
+      //console.log(current.x +" "+current.y)
+      if(current.x === targetPos.x && current.y === targetPos.y){
+        //console.log("after"+Date.now())
+        return this.reconstructPath(current);
+      
+      }
+      var speed = this.players[0].speed * 0.002;
+      closedSet.push(current);
+      let neighbor;
+      //going thorugh all neigbohrs
+      for(let i=1; i<=4; i++){//check all my neighbors
+        
+        //if(canMoveGhost(ghost, i, current.x, current.y) === false)
+         // continue;
+        if(i===1)//check right
+          neighbor = {
+            "x": current.x+4,
+            "y": current.y,
+            "direction": 1,
+            gScore:Infinity,
+            fScore:Infinity,
+            cameFrom:null,
+            move:{
+              x: speed,
+              y:0
+            }
+          }
+        else if(i===2)//up
+          neighbor = {
+            "x": current.x,
+            "y": current.y+4,
+            "direction": 2,
+            gScore:Infinity,
+            fScore:Infinity,
+            cameFrom:null,
+            move:{
+              x: 0,
+              y: speed
+            }
+          }
+  
+        else if(i===3)//left
+          neighbor = {
+            "x": current.x-4,
+            "y": current.y,
+            "direction": 3,
+            gScore:Infinity,
+            fScore:Infinity,
+            cameFrom:null,
+            move:{
+              x: -speed,
+              y:0
+            }
+          }
+  
+        else if(i===4)//down
+          neighbor = {
+            "x": current.x,
+            "y": current.y-4,
+            "direction": 4,
+            gScore:Infinity,
+            fScore:Infinity,
+            cameFrom:null,
+            move:{
+              x: 0,
+              y:-speed
+            }
+          }
+
+        if(this.moveEntity(current, this.players[0].size, {x: neighbor.move.x, y: neighbor.move.y}) === false)
+          continue;
+        
+
+        let tentGScore = current.gScore + 2;
+        if(this.isInSet(neighbor, closedSet) === true || tentGScore >= neighbor.gScore)
+          continue;
+        if(this.isInSet(neighbor, openSet) === false || tentGScore < neighbor.gScore){
+          neighbor.cameFrom = current;
+          neighbor.gScore = tentGScore;
+          neighbor.fScore = neighbor.gScore + Math.sqrt(Math.pow((neighbor.x - targetPos.x),2) + Math.pow((neighbor.y - targetPos.y),2));
+          if(this.isInSet(neighbor, openSet) === false)
+            openSet.push(neighbor)
+          else{//new gScore < old and neighbor already in openSet. so just update
+            let index = openSet.findIndex((element)=>element.x === neighbor.x && element.y === neighbor.y);
+            openSet[index] = neighbor;
+          }
+          openSet = openSet.sort(this.compareNums);
+          
+        }
+      
+      }
+  
+    }
+  }
+
+  reconstructPath(currentNode){
+    //console.log("before"+Date.now())
+    let pathToPacMan = [];
+    //pathToPacMan.push(currentNode.cameFrom);
+    
+    let parent = currentNode.cameFrom;
+    while(parent.cameFrom !== "START"){
+      pathToPacMan.push({"direction": parent.direction, x: parent.x, y: parent.y});
+      parent = parent.cameFrom;
+    }
+    
+    pathToPacMan = pathToPacMan.reverse();
+    //console.log("after "+Date.now())
+  
+    return pathToPacMan;
+  }
+
+  
+
+  compareNums(a, b){
+    if(a.fScore > b.fScore)
+      return 1;
+    else if(a.fScore < b.fScore)
+      return -1;
+    else
+      return 0;
   }
 
   // x0/y0 === the player
@@ -325,6 +488,120 @@ export default class Level {
       x: pos.x + move.x,
       y: pos.y + move.y,
     };
+
+    const contEndPos = {
+      x: pos.x + move.x,
+      y: pos.y + move.y,
+    };
+
+    // check X axis motion for collisions
+    if (move.x) {
+      // calculate the X tile coordinate where we'd like to be
+      let offset = move.x > 0 ? size.x : 0;
+      let x = floor((pos.x + move.x + offset) / tileSize);
+
+      // figure out the range of Y tile coordinates that we can collide with
+      let start = floor(pos.y / tileSize);
+      let end = Math.ceil((pos.y + size.y) / tileSize);
+
+      // determine whether these tiles are all inside the map
+      if (
+        end >= 0 &&
+        start < this.dungeon.size.y &&
+        x >= 0 &&
+        x < this.dungeon.size.x
+      ) {
+        // go down each of the tiles along the Y axis
+        for (let y = start; y < end; y++) {
+          // if there is a wall in the tile
+          if (this.collisionMap[y][x] === tiles.wall) {
+            // we adjust our end position accordingly
+            endPos.x = x * tileSize - offset + (move.x < 0 ? tileSize : 0);
+            break;
+          }
+        }
+      }
+    }
+
+    // then check Y axis motion for collisions
+    if (move.y) {
+      // calculate the X tile coordinate where we'd like to be
+      let offset = move.y > 0 ? size.y : 0;
+      let y = floor((pos.y + move.y + offset) / tileSize);
+
+      // figure out the range of X tile coordinates that we can collide with
+      let start = floor(endPos.x / tileSize);
+      let end = Math.ceil((endPos.x + size.x) / tileSize);
+
+      // determine whether these tiles are all inside the map
+      if (
+        end >= 0 &&
+        start < this.dungeon.size.x &&
+        y >= 0 &&
+        y < this.dungeon.size.y
+      ) {
+        // go across each of the tiles along the X axis
+        for (let x = start; x < end; x++) {
+          // if there is a wall in the tile
+          if (this.collisionMap[y][x] === tiles.wall) {
+            // we adjust our end position accordingly
+            endPos.y = y * tileSize - offset + (move.y < 0 ? tileSize : 0);
+            break;
+          }
+        }
+      }
+    }
+
+    if((contEndPos.x === endPos.x) && (contEndPos.y === endPos.y))
+      return true;
+    else
+      return false;
+    // give back the new position for the object
+    return endPos;
+  }
+
+  canMoveEntity(pos, size, move) {
+    // start with the end goal position
+    let endPos = {
+      x: move.x,
+      y: move.y,
+    };
+    if(this.collisionMap[endPos.y][endPos.x] === tiles.wall)
+      return false;
+    else
+      return true;
+
+      let offset = move.x > 0 ? size.x : 0;
+      let x = floor((pos.x + move.x + offset) / tileSize);
+
+      // figure out the range of Y tile coordinates that we can collide with
+      let start = floor(pos.y / tileSize);
+      let end = Math.ceil((pos.y + size.y) / tileSize);
+
+      let offsety = move.y > 0 ? size.y : 0;
+      let y = floor((pos.y + move.y + offset) / tileSize);
+
+      // figure out the range of X tile coordinates that we can collide with
+      let starty = floor(endPos.x / tileSize);
+      let endy = Math.ceil((endPos.x + size.x) / tileSize);
+
+      if (
+        (end >= 0 &&
+        start < this.dungeon.size.y &&
+        x >= 0 &&
+        x < this.dungeon.size.x) && (
+          end >= 0 &&
+          start < this.dungeon.size.x &&
+          y >= 0 &&
+          y < this.dungeon.size.y
+        )
+      ){
+        if(this.collisionMap[endPos.y][endPos.x] === tiles.wall)
+          return false;
+        else
+          return true;
+      }else
+        return true;
 
     // check X axis motion for collisions
     if (move.x) {
