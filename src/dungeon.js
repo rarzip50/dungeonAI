@@ -10,9 +10,9 @@ export default class Dungeon {
   constructor(width, height) {
     this.size = { x: width, y: height };
 
-    this.minRoomSize = 5;
+    this.minRoomSize = 8;
     this.maxRoomSize = 12;
-    this.maxNumRooms = 20;
+    this.maxNumRooms = 14;
     this.maxRoomArea = 120;
 
     this.addammo = true;
@@ -21,7 +21,7 @@ export default class Dungeon {
     this.rooms = [];
     this.roomGrid = [];
   }
-
+  
   getStairs(team) {
     let result = { up: null, down: null };
     let r;
@@ -41,7 +41,7 @@ export default class Dungeon {
     return result;
   }
 
-  //returns the room position by x and y that match the players positins values
+  //returns the room position by x and y that match the players positions values
   getRoomPos(room, player) {
     let result = { x: null, y: null };
     let r = room;
@@ -57,7 +57,7 @@ export default class Dungeon {
             else
               result = { 
                 x: (r.pos.x + 1) * tileSize + tileSize / 2 - player.size.x / 2,
-                y: (r.pos.y + y) * tileSize + tileSize / 2 - player.size.y / 2 
+                y: (r.pos.y + 1) * tileSize + tileSize / 2 - player.size.y / 2 
               };
         }
       }

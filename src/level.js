@@ -41,8 +41,10 @@ export default class Level {
         onStairs: true,
         health: 100,
         ammo: 20,
+        type: "FIGHT",
         id: 1,
         team: "A",
+        genId: 1,
         target:{x: "", y: ""},
         pathToTarget: null
       },
@@ -53,6 +55,8 @@ export default class Level {
         color: "#0CED13",
         onStairs: true,
         health: 100,
+        type: "AMMO",
+        genId: 2,
         ammo: 20,
         id: 2,
         team: "A",
@@ -63,9 +67,11 @@ export default class Level {
         pos: { x: 0, y: 0 },
         size: { x: 12, y: 12 },
         speed: 175,
+        genId: 3,
         color: "#1488C5",
         onStairs: true,
         health: 100,
+        type: "SURVIVE",
         ammo: 20,
         id: 1,
         team: "B",
@@ -81,41 +87,15 @@ export default class Level {
         health: 100,
         ammo: 20,
         id: 2,
+        genId: 4,
         team: "B",
         target:{x: "", y: ""},
         pathToTarget: null
       }
     ];
 
-    this.playersB = [
-      {
-        pos: { x: 0, y: 0 },
-        size: { x: 12, y: 12 },
-        speed: 175,
-        color: "#1488C5",
-        onStairs: true,
-        health: 100,
-        ammo: 20,
-        id: 1,
-        team: "B",
-        target:{x: "", y: ""},
-        pathToTarget: null
-      },
-      {
-        pos: { x: 0, y: 0 },
-        size: { x: 44, y: 12 },
-        speed: 175,
-        color: "#1488C5",
-        onStairs: true,
-        health: 100,
-        ammo: 20,
-        id: 2,
-        team: "B",
-        target:{x: "", y: ""},
-        pathToTarget: null
-      }
-    ];
-
+    //set players initial health and ammo values
+    this.setPlayersInfo();
     //place each team in different room at start
     this.setPlayersPosition();
     //set a fight room for each couple of players from different teams
@@ -151,12 +131,41 @@ export default class Level {
   setPlayersPosition(){
     for(let i=0; i<this.players.length; i++){
       let stairs = this.dungeon.getStairs(this.players[i].team);
-      console.log(stairs)
-      //console.log(stairs)
       this.players[i].pos.x =
         stairs.up.x * tileSize + tileSize / 2 - this.players[i].size.x / 2;
       this.players[i].pos.y =
         stairs.up.y * tileSize + tileSize / 2 - this.players[i].size.y / 2;
+    }
+  }
+
+  setPlayersInfo(){
+    let menu = document.getElementById("menu");
+    let header = document.createElement('div');
+    header.style.marginTop = '10px';
+    header.innerText = "ammo   health";
+    header.style.marginLeft = "30px";
+    menu.appendChild(header);
+
+    for(let i=0; i<this.players.length; i++){
+      let container = document.createElement('div');
+      container.style.marginTop = "30px";
+      let playerId = document.createElement('div');
+      playerId.innerText = this.players[i].team+" "+this.players[i].id;
+      playerId.style.display = 'inline-block';
+      playerId.style.marginLeft = '10px';
+      
+      let health = document.createElement('div');
+      health.innerText = 100;
+      health.style.display = 'inline-block';
+      health.style.marginLeft = '10px';
+      let ammo = document.createElement('div');
+      ammo.innerText = 100;
+      ammo.style.display = 'inline-block';
+      ammo.style.marginLeft = '10px';
+      container.appendChild(playerId);
+      container.appendChild(health);
+      container.appendChild(ammo);
+      menu.appendChild(container)
     }
   }
 
@@ -174,6 +183,11 @@ export default class Level {
     player1Health.textContent = playerHealth + healthVal;
   }
 
+  updateAmmo(ammoVal, player){
+    let playerHealth = parseInt((document.getElementById("player1Health").textContent));
+    player1Health.textContent = playerHealth + healthVal;
+  }
+
   update() {
     //get the next move from global path to target of relevnt player
     //this.players[0].pos = this.moveEntity(this.players[0].pos, this.players[0].size, move);
@@ -185,7 +199,14 @@ export default class Level {
       }
     }
     this.counter ++;
-    //console.log(this.players[0].pos)
+    //everyone at their targets. start doing the missions
+    if(this.players.every(this.isInTarget)){
+      for(let i=0; i<this.players.length; i++){
+        this.calculateMission(this.players[i], this.counter);
+      }
+    }
+      
+
     // compute the player's center
     let cx = floor((this.players[0].pos.x + this.players[0].size.x / 2) / tileSize);
     let cy = floor((this.players[0].pos.y + this.players[0].size.y / 2) / tileSize);
@@ -231,6 +252,27 @@ export default class Level {
 
     // return our destination
     return dest;
+  }
+
+  calculateMission(player, counter){
+    if(player.type === "FIGHT")//wants to kill no matter what. shoots until out of ammo
+      this.shoot(player, counter);
+  }
+
+  shoot(player, counter){
+    if(counter % 100 === 0){
+      if(player.color !== "red")
+        player.color = "red";
+      else
+        player.color = "#0CED13";
+    }
+  }
+
+  isInTarget(player){
+    if(player.pathToTarget !== null && player.pathToTarget.length === 0)
+      return true;
+    else
+      return false;
   }
 
   isInSet(jsonObject, jsonSet){
@@ -545,6 +587,10 @@ export default class Level {
         floor(this.players[i].size.x),
         floor(this.players[i].size.y)
       );
+      var ctx=canvas.getContext("2d");
+      context.font="12px bold 10pt";
+      context.fillStyle = "blue";
+      context.fillText(this.players[i].genId, this.players[i].pos.x- camera.x+2, this.players[i].pos.y - camera.y+10);
     }
   }
 
