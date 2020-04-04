@@ -43,6 +43,33 @@ export default class Level {
         ammo: 20,
         id: 1,
         team: "A",
+        target:{x: "", y: ""},
+        pathToTarget: null
+      },
+      {
+        pos: { x: 0, y: 0 },
+        size: { x: 12, y: 12 },
+        speed: 175,
+        color: "#0CED13",
+        onStairs: true,
+        health: 100,
+        ammo: 20,
+        id: 2,
+        team: "A",
+        target:{x: "", y: ""},
+        pathToTarget: null
+      },
+      {
+        pos: { x: 0, y: 0 },
+        size: { x: 12, y: 12 },
+        speed: 175,
+        color: "#1488C5",
+        onStairs: true,
+        health: 100,
+        ammo: 20,
+        id: 1,
+        team: "B",
+        target:{x: "", y: ""},
         pathToTarget: null
       },
       {
@@ -55,30 +82,81 @@ export default class Level {
         ammo: 20,
         id: 2,
         team: "B",
+        target:{x: "", y: ""},
         pathToTarget: null
       }
     ];
 
-    // place the player at the up stair case
-    this.setPlayersPosition(this.players);
-    this.updatePlayerPathToTarget(this.players[0], this.players[1].pos)
-    //calculate paths to targets of all players
-    //for(let i=0; i<this.players.length; i++){
-      //this.updatePlayerPathToTarget(this.players[i], this.players[1].pos)
-    //}
+    this.playersB = [
+      {
+        pos: { x: 0, y: 0 },
+        size: { x: 12, y: 12 },
+        speed: 175,
+        color: "#1488C5",
+        onStairs: true,
+        health: 100,
+        ammo: 20,
+        id: 1,
+        team: "B",
+        target:{x: "", y: ""},
+        pathToTarget: null
+      },
+      {
+        pos: { x: 0, y: 0 },
+        size: { x: 44, y: 12 },
+        speed: 175,
+        color: "#1488C5",
+        onStairs: true,
+        health: 100,
+        ammo: 20,
+        id: 2,
+        team: "B",
+        target:{x: "", y: ""},
+        pathToTarget: null
+      }
+    ];
+
+    //place each team in different room at start
+    this.setPlayersPosition();
+    //set a fight room for each couple of players from different teams
+    this.setFightRoom();
+    //calculate the path to the fight room
+    for(let i=0; i<this.players.length; i++){
+      this.updatePlayerPathToTarget(this.players[i], this.players[i].target)
+    }
+    //this.updatePlayerPathToTarget(this.players[2], this.players[2].target)
+   
+  }
+
+  setFightRoom(){
+    let taken = [];
+    let teamA = this.players.filter(element => element.team === 'A');
+    let teamB = this.players.filter(element => element.team === 'B');
+    let roomNum;
+    for(let i=0; i<teamA.length; i++){
+      do{
+        roomNum = Math.floor(Math.random() * this.dungeon.maxNumRooms);
+      }while(taken.includes(roomNum));
+      teamA[i].target = this.dungeon.getRoomPos(this.dungeon.rooms[roomNum], teamA[i]);
+      teamB[i].target = this.dungeon.getRoomPos(this.dungeon.rooms[roomNum], teamB[i]);
+      taken.push(roomNum);
+      
+    }
   }
 
   updatePlayerPathToTarget(player, targetPos){
     player.pathToTarget = this.aStar2(player.pos, targetPos);
   }
 
-  setPlayersPosition(players){
-    for(let i=0; i<players.length; i++){
-      let stairs = this.dungeon.getStairs(players[i].team);
-      players[i].pos.x =
-        stairs.up.x * tileSize + tileSize / 2 - players[i].size.x / 2;
-      players[i].pos.y =
-        stairs.up.y * tileSize + tileSize / 2 - players[i].size.y / 2;
+  setPlayersPosition(){
+    for(let i=0; i<this.players.length; i++){
+      let stairs = this.dungeon.getStairs(this.players[i].team);
+      console.log(stairs)
+      //console.log(stairs)
+      this.players[i].pos.x =
+        stairs.up.x * tileSize + tileSize / 2 - this.players[i].size.x / 2;
+      this.players[i].pos.y =
+        stairs.up.y * tileSize + tileSize / 2 - this.players[i].size.y / 2;
     }
   }
 
@@ -96,28 +174,16 @@ export default class Level {
     player1Health.textContent = playerHealth + healthVal;
   }
 
-  update(elapsed, keysDown) {
-    // handle input to move the player
-    let move = { x: 0, y: 0 };
-    if (keys.left in keysDown) {
-      move.x -= this.players[0].speed * 0.02;
-    }
-    if (keys.right in keysDown) {
-      move.x += this.players[0].speed * 0.02;
-    }
-    if (keys.up in keysDown) {
-      move.y -= this.players[0].speed * 0.02;
-    }
-    if (keys.down in keysDown) {
-      move.y += this.players[0].speed * 0.02;
-    }
-
-    // collide the player against the dungeon
+  update() {
     //get the next move from global path to target of relevnt player
     //this.players[0].pos = this.moveEntity(this.players[0].pos, this.players[0].size, move);
     
-    if(this.counter % 2 === 0 || this.counter === 1)
-      this.players[0].pos = this.players[0].pathToTarget.shift();
+    if(this.counter % 2 === 0 || this.counter === 1){
+      for(let i=0; i<this.players.length; i++){
+        if(this.players[i].pathToTarget !== null && this.players[i].pathToTarget.length !== 0)
+          this.players[i].pos = this.players[i].pathToTarget.shift();
+      }
+    }
     this.counter ++;
     //console.log(this.players[0].pos)
     // compute the player's center

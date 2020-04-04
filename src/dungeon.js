@@ -2,7 +2,7 @@ import Room from "./room";
 import tiles from "./tiles";
 
 const { floor, random, min, max } = Math;
-
+const tileSize = 16;
 const randomRange = (min, max) => floor(random() * (max - min) + min);
 const randomElement = array => array[floor(random() * array.length)];
 
@@ -29,15 +29,38 @@ export default class Dungeon {
       r = this.rooms[0];
     }else
       r = this.rooms[this.rooms.length-1];
-        for (let y = 0; y < r.size.y; y++) {
-          for (let x = 0; x < r.size.x; x++) {
-            if (r.tiles[y][x] === tiles.floor) {
-              result.up = { x: r.pos.x + x, y: r.pos.y + y };
-            } else if (r.tiles[y][x] === tiles.medic) {
-              result.down = { x: r.pos.x + x, y: r.pos.y + y };
-            }
+      for (let y = 0; y < r.size.y; y++) {
+        for (let x = 0; x < r.size.x; x++) {
+          if (r.tiles[y][x] === tiles.floor) {
+            result.up = { x: r.pos.x + x, y: r.pos.y + y };
+          } else if (r.tiles[y][x] === tiles.medic) {
+            result.down = { x: r.pos.x + x, y: r.pos.y + y };
           }
         }
+      }
+    return result;
+  }
+
+  //returns the room position by x and y that match the players positins values
+  getRoomPos(room, player) {
+    let result = { x: null, y: null };
+    let r = room;
+      for (let y = 0; y < r.size.y; y++) {
+        for (let x = 0; x < r.size.x; x++) {
+          
+          if (r.tiles[y][x] === tiles.floor) 
+            if(player.team === 'A')
+              result = { 
+                x: (r.pos.x + x) * tileSize + tileSize / 2 - player.size.x / 2,
+                y: (r.pos.y + y) * tileSize + tileSize / 2 - player.size.y / 2 
+              };
+            else
+              result = { 
+                x: (r.pos.x + 1) * tileSize + tileSize / 2 - player.size.x / 2,
+                y: (r.pos.y + y) * tileSize + tileSize / 2 - player.size.y / 2 
+              };
+        }
+      }
     return result;
   }
 
