@@ -150,7 +150,7 @@ export default class Level {
       let container = document.createElement('div');
       container.style.marginTop = "30px";
       let playerId = document.createElement('div');
-      playerId.innerText = this.players[i].team+" "+this.players[i].id;
+      playerId.innerText = this.players[i].genId;
       playerId.style.display = 'inline-block';
       playerId.style.marginLeft = '10px';
       
@@ -158,10 +158,14 @@ export default class Level {
       health.innerText = 100;
       health.style.display = 'inline-block';
       health.style.marginLeft = '10px';
+      health.setAttribute("id", "player"+this.players[i].genId+"health");
+
       let ammo = document.createElement('div');
       ammo.innerText = 100;
       ammo.style.display = 'inline-block';
       ammo.style.marginLeft = '10px';
+      ammo.setAttribute("id", "player"+this.players[i].genId+"ammo");
+
       container.appendChild(playerId);
       container.appendChild(health);
       container.appendChild(ammo);
@@ -178,9 +182,10 @@ export default class Level {
   }
 
   //update player health
-  updateHealth(healthVal){
-    let playerHealth = parseInt((document.getElementById("player1Health").textContent));
-    player1Health.textContent = playerHealth + healthVal;
+  updateHealth(healthVal, player){
+    console.log(player)
+    let playerHealth = (document.getElementById("player"+player.genId+"health"));
+    playerHealth.textContent = parseInt(playerHealth.textContent)+healthVal; 
   }
 
   updateAmmo(ammoVal, player){
@@ -208,48 +213,50 @@ export default class Level {
       
 
     // compute the player's center
-    let cx = floor((this.players[0].pos.x + this.players[0].size.x / 2) / tileSize);
-    let cy = floor((this.players[0].pos.y + this.players[0].size.y / 2) / tileSize);
+    let dest = [];
+    for(let i=0; i<this.players.length; i++){
+      let cx = floor((this.players[i].pos.x + this.players[i].size.x / 2) / tileSize);
+      let cy = floor((this.players[i].pos.y + this.players[i].size.y / 2) / tileSize);
 
-    // the return value for the destination. -1 means go up a floor, 1 means go down a floor
-    let dest = 0;
+      // the return value for the destination. -1 means go up a floor, 1 means go down a floor
 
-    // tracks if the player is on stairs this frame
-    let onStairs = false;
+      // tracks if the player is on stairs this frame
+      let onStairs = false;
 
-    // grab the new current list of rooms
-    let rooms = this.dungeon.roomGrid[cy][cx];
-    for (let i = 0; i < rooms.length; i++) {
-      let r = rooms[i];
+      // grab the new current list of rooms
+      let rooms = this.dungeon.roomGrid[cy][cx];
+      for (let i = 0; i < rooms.length; i++) {
+        let r = rooms[i];
 
-      // get the player's center in room coordinates
-      let lx = cx - r.pos.x;
-      let ly = cy - r.pos.y;
+        // get the player's center in room coordinates
+        let lx = cx - r.pos.x;
+        let ly = cy - r.pos.y;
 
-      // if we're on the up stairs, return -1 to indicate we want to move up
-      if (r.tiles[ly][lx] === tiles.ammo) {
-        onStairs = true;
+        // if we're on the up stairs, return -1 to indicate we want to move up
+        if (r.tiles[ly][lx] === tiles.ammo) {
+          onStairs = true;
 
-        if (!this.player.onStairs) {
-          dest = -1;
-          break;
+          if (!this.player[i].onStairs) {
+            dest.push({player: this.players[i], result: "AMMO"});
+            continue;
+          }
+        }
+
+        // if we're on the down stairs, return 1 to indicate we want to move down
+        if (r.tiles[ly][lx] === tiles.medic) {
+          onStairs = true;
+          
+          if (!this.players[i].onStairs) {
+            dest.push({player: this.players[i], result: "MEDIC"});
+            continue;
+          }
         }
       }
-
-      // if we're on the down stairs, return 1 to indicate we want to move down
-      if (r.tiles[ly][lx] === tiles.medic) {
-        onStairs = true;
-
-        if (!this.players[0].onStairs) {
-          dest = 1;
-          break;
-        }
-      }
-    }
 
     // update the player's "onStairs" property
-    this.players[0].onStairs = onStairs;
-
+      this.players[i].onStairs = onStairs;
+    }
+    
     // return our destination
     return dest;
   }

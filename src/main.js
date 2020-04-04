@@ -35,6 +35,7 @@ window.addEventListener(
   false
 );
 
+
 let levels = [new Level()];
 console.log("here");
 let currentLevel = 0;
@@ -68,8 +69,12 @@ function tick(timestamp) {
   
   const change = levels[currentLevel].update(delta, keysDown);
   //if player has stepped on health tile
+  for(let i=0; i<change.length; i++){
+    if(change[i].result === "HEALTH")
+      levels[currentLevel].updateHealth(2, change[i].player);
+  }
   if(change === 1){
-    levels[currentLevel].updateHealth(2);
+    levels[currentLevel].updateHealth(2, player);
   }
 
   const canvas = document.getElementById("myCanvas");
