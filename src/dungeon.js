@@ -17,11 +17,13 @@ export default class Dungeon {
 
     this.addammo = true;
     this.addmedic = true;
+    this.ammoTiles = [{}];
+    this.healthTiles = [{}];
 
     this.rooms = [];
     this.roomGrid = [];
   }
-  
+
   getStairs(team) {
     let result = { up: null, down: null };
     let r;
@@ -529,5 +531,11 @@ export default class Dungeon {
     // pick a random candidate location and make it the stairs
     let loc = randomElement(candidates);
     room.tiles[loc.y][loc.x] = type;
+    //(r.pos.x + x) * tileSize + tileSize / 2 - player.size.x / 2
+    if(type === tiles.medic)
+      this.healthTiles.push({x: (room.pos.x + loc.x) * tileSize + tileSize / 2 - 6, y: (room.pos.y + loc.y) * tileSize + tileSize / 2 - 6})
+    if(type === tiles.ammo)
+      this.ammoTiles.push({x: (room.pos.x + loc.x) * tileSize + tileSize / 2 - 6, y: (room.pos.y + loc.y) * tileSize + tileSize / 2 - 6})
+      //console.log();
   }
 }

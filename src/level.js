@@ -18,7 +18,6 @@ export default class Level {
 
     // the tiles in the map
     this.tiles = this.dungeon.getFlattenedTiles();
-
     // basic player object
     
     this.player = {
@@ -38,6 +37,7 @@ export default class Level {
         size: { x: 12, y: 12 },
         speed: 175,
         color: "#0CED13",
+        teamColor: "#0CED13",
         onStairs: true,
         health: 100,
         ammo: 20,
@@ -45,6 +45,7 @@ export default class Level {
         id: 1,
         team: "A",
         genId: 1,
+        enemy: 3,
         target:{x: "", y: ""},
         pathToTarget: null
       },
@@ -53,12 +54,14 @@ export default class Level {
         size: { x: 12, y: 12 },
         speed: 175,
         color: "#0CED13",
+        teamColor: "#0CED13",
         onStairs: true,
         health: 100,
-        type: "AMMO",
+        type: "AMMOKEEPER",
         genId: 2,
         ammo: 20,
         id: 2,
+        enemy: 4,
         team: "A",
         target:{x: "", y: ""},
         pathToTarget: null
@@ -69,10 +72,12 @@ export default class Level {
         speed: 175,
         genId: 3,
         color: "#1488C5",
+        teamColor: "#1488C5",
         onStairs: true,
         health: 100,
-        type: "SURVIVE",
+        type: "HEALTHKEEPER",
         ammo: 20,
+        enemy: 1,
         id: 1,
         team: "B",
         target:{x: "", y: ""},
@@ -83,17 +88,20 @@ export default class Level {
         size: { x: 12, y: 12 },
         speed: 175,
         color: "#1488C5",
+        teamColor: "#1488C5",
+        type: "SURVIVE",
         onStairs: true,
         health: 100,
         ammo: 20,
         id: 2,
+        enemy: 2,
         genId: 4,
         team: "B",
         target:{x: "", y: ""},
         pathToTarget: null
       }
     ];
-
+    console.log(this.dungeon.rooms)
     //set players initial health and ammo values
     this.setPlayersInfo();
     //place each team in different room at start
@@ -121,6 +129,10 @@ export default class Level {
       teamB[i].target = this.dungeon.getRoomPos(this.dungeon.rooms[roomNum], teamB[i]);
       taken.push(roomNum);
       
+     //console.log(this.dungeon.healthTiles)
+     //teamA[i].target = this.dungeon.healthTiles[1];
+     //console.log(this.players[0].target)
+     //teamB[i].target = this.dungeon.healthTiles.shift();
     }
   }
 
@@ -142,7 +154,7 @@ export default class Level {
     let menu = document.getElementById("menu");
     let header = document.createElement('div');
     header.style.marginTop = '10px';
-    header.innerText = "ammo   health";
+    header.innerText = "health   ammo";
     header.style.marginLeft = "30px";
     menu.appendChild(header);
 
@@ -161,7 +173,7 @@ export default class Level {
       health.setAttribute("id", "player"+this.players[i].genId+"health");
 
       let ammo = document.createElement('div');
-      ammo.innerText = 100;
+      ammo.innerText = 10;
       ammo.style.display = 'inline-block';
       ammo.style.marginLeft = '10px';
       ammo.setAttribute("id", "player"+this.players[i].genId+"ammo");
@@ -183,14 +195,28 @@ export default class Level {
 
   //update player health
   updateHealth(healthVal, player){
-    console.log(player)
     let playerHealth = (document.getElementById("player"+player.genId+"health"));
-    playerHealth.textContent = parseInt(playerHealth.textContent)+healthVal; 
+    let margin = 100 - playerHealth.textContent;
+    if(margin <= healthVal)
+      playerHealth.textContent = 100; 
+    else
+      playerHealth.textContent = parseInt(playerHealth.textContent)+healthVal; 
+  }
+
+  getHealth(player){
+    let playerHealth = (document.getElementById("player"+player.genId+"health"));
+    return parseInt(playerHealth.textContent);   
   }
 
   updateAmmo(ammoVal, player){
-    let playerHealth = parseInt((document.getElementById("player1Health").textContent));
-    player1Health.textContent = playerHealth + healthVal;
+    let playerAmmo = (document.getElementById("player"+player.genId+"ammo"));
+    playerAmmo.textContent = parseInt(playerAmmo.textContent)+ammoVal; 
+  }
+
+  
+  getAmmo(player){
+    let playerAmmo = (document.getElementById("player"+player.genId+"ammo"));
+    return parseInt(playerAmmo.textContent); 
   }
 
   update() {
@@ -204,10 +230,10 @@ export default class Level {
       }
     }
     this.counter ++;
-    //everyone at their targets. start doing the missions
-    if(this.players.every(this.isInTarget)){
-      for(let i=0; i<this.players.length; i++){
-        this.calculateMission(this.players[i], this.counter);
+    //when someone in his position he can get a new mission
+    for(let i=0; i<this.players.length; i++){
+      if((this.isInTarget(this.players[i]))){
+        this.performMission(this.players[i], this.counter);
       }
     }
       
@@ -225,8 +251,8 @@ export default class Level {
 
       // grab the new current list of rooms
       let rooms = this.dungeon.roomGrid[cy][cx];
-      for (let i = 0; i < rooms.length; i++) {
-        let r = rooms[i];
+      for (let j = 0; j < rooms.length; j++) {
+        let r = rooms[j];
 
         // get the player's center in room coordinates
         let lx = cx - r.pos.x;
@@ -236,7 +262,7 @@ export default class Level {
         if (r.tiles[ly][lx] === tiles.ammo) {
           onStairs = true;
 
-          if (!this.player[i].onStairs) {
+          if (!this.players[i].onStairs) {
             dest.push({player: this.players[i], result: "AMMO"});
             continue;
           }
@@ -247,7 +273,7 @@ export default class Level {
           onStairs = true;
           
           if (!this.players[i].onStairs) {
-            dest.push({player: this.players[i], result: "MEDIC"});
+            dest.push({player: this.players[i], result: "HEALTH"});
             continue;
           }
         }
@@ -261,25 +287,110 @@ export default class Level {
     return dest;
   }
 
-  calculateMission(player, counter){
-    if(player.type === "FIGHT")//wants to kill no matter what. shoots until out of ammo
-      this.shoot(player, counter);
-  }
+  performMission(player, counter){
+    let enemy = this.players.find(element => element.genId === player.enemy);
+    let distance = floor(Math.sqrt(Math.pow((player.pos.x - enemy.pos.x),2) + Math.pow((player.pos.y - enemy.pos.y),2))); 
+    
+    if(player.type === "FIGHT"){//does not care about health. only wants to kill if possible
+      if(this.getAmmo(player) < 2){
+        player.color = player.teamColor;
+        this.findAmmo(player);
+      }
+      else if(distance < 70)
+        this.shoot(player, counter);
+      else{
+        player.color = player.teamColor;
+        this.updatePlayerPathToTarget(player, enemy.pos);
+      }
+    }
+    
+    if(player.type === "HEALTHKEEPER"){//fill health if health < 70, otherwise try to shoot
+      if(this.getHealth(player) < 70){
+        player.color = player.teamColor;
+        this.findHealth(player);
+      }
+      else if(distance < 70 && this.getAmmo(player) > 0)
+        this.shoot(player, counter);
+      else if(this.getAmmo(player) === 0)
+        this.findAmmo(player);
+      else{
+        player.color = player.teamColor;
+        this.updatePlayerPathToTarget(player, enemy.pos);
+      }
+    }
 
-  shoot(player, counter){
-    if(counter % 100 === 0){
-      if(player.color !== "red")
-        player.color = "red";
-      else
-        player.color = "#0CED13";
+    if(player.type === "AMMOKEEPER"){//fill ammo if ammo < 70, otherwise try to shoot. does not care about health
+      if(this.getAmmo(player) < 8){
+        player.color = player.teamColor;
+        this.findAmmo(player);
+      }
+      else if(distance < 70 && this.getAmmo(player) > 0)
+        this.shoot(player, counter);
+      else if(this.getAmmo(player) === 0)
+        this.findAmmo(player);
+      else{
+        player.color = player.teamColor;
+        this.updatePlayerPathToTarget(player, enemy.pos);
+      }
+    }
+
+    if(player.type === "SURVIVE"){//runs away if health < 70. otherwise try to shoot
+      if(this.getHealth(player) < 70){
+        player.color = player.teamColor;
+        this.runAway(player);
+      }
+      else if(distance < 70)
+        this.shoot(player, counter);
+      else{
+        player.color = player.teamColor;
+        this.updatePlayerPathToTarget(player, enemy.pos);
+      }
     }
   }
 
+  shoot(player, counter){
+    let enemy = this.players.find(element => element.genId === player.enemy);
+    let distance = floor(Math.sqrt(Math.pow((player.pos.x - enemy.pos.x),2) + Math.pow((player.pos.y - enemy.pos.y),2))); 
+    let damage = 6 - floor(distance*(0.0714));
+    if(counter % 30 === 0){
+      if(player.color !== "red"){//release a shot
+        player.color = "red";
+        this.updateHealth(-damage, enemy);
+        this.updateAmmo(-1, player);
+      }
+      else{
+        player.color = player.teamColor;
+      }
+    }
+    
+  }
+
+  findHealth(player){
+      let randNum = Math.floor(Math.random() * this.dungeon.healthTiles.length-1);
+      player.target = this.dungeon.healthTiles[randNum+2];
+      this.updatePlayerPathToTarget(player, player.target);
+  }
+
+  findAmmo(player){
+    let randNum = Math.floor(Math.random() * this.dungeon.ammoTiles.length-1);
+    player.target = this.dungeon.ammoTiles[randNum+2];
+    this.updatePlayerPathToTarget(player, player.target);
+  }
+
+  runAway(player){
+    let roomNum = Math.floor(Math.random() * this.dungeon.maxNumRooms);
+    let roomPos = this.dungeon.getRoomPos(this.dungeon.rooms[roomNum], player);
+    this.updatePlayerPathToTarget(player, roomPos);
+  }
+
   isInTarget(player){
-    if(player.pathToTarget !== null && player.pathToTarget.length === 0)
+    
+    if(player.pathToTarget !== null && player.pathToTarget.length === 0){
       return true;
-    else
+    }
+    else{
       return false;
+    }
   }
 
   isInSet(jsonObject, jsonSet){
