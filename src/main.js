@@ -68,6 +68,8 @@ function tick(timestamp) {
   prevTime = timestamp;
   
   const change = levels[currentLevel].update(delta, keysDown);
+  if(change.active === false)
+    alert("game over, team "+change.teamWon+" won !!")
   //if player has stepped on health tile
   for(let i=0; i<change.length; i++){
     if(change[i].result === "HEALTH"){

@@ -12,6 +12,7 @@ export default class Level {
     this.dungeon = new Dungeon(100, 100);
     this.dungeon.generate();
     this.counter = 1;
+    this.types = ["FIGHT", "AMMOKEEPER", "HEALTHKEEPER", "SURVIVE"];
 
     // the current collision map for the dungeon
     this.collisionMap = this.dungeon.getCollisionMap();
@@ -38,14 +39,31 @@ export default class Level {
         speed: 175,
         color: "#0CED13",
         teamColor: "#0CED13",
+        stringColor: "green",
         onStairs: true,
-        health: 100,
-        ammo: 20,
-        type: "FIGHT",
+        type: "",
         id: 1,
         team: "A",
         genId: 1,
-        enemy: 3,
+        enemy: 5,
+        status: "alive",
+        target:{x: "", y: ""},
+        pathToTarget: null
+      },
+      {
+        pos: { x: 0, y: 0 },
+        size: { x: 12, y: 12 },
+        stringColor: "green",
+        speed: 175,
+        color: "#0CED13",
+        teamColor: "#0CED13",
+        onStairs: true,
+        type: "",
+        genId: 2,
+        id: 2,
+        enemy: 6,
+        team: "A",
+        status: "alive",
         target:{x: "", y: ""},
         pathToTarget: null
       },
@@ -55,14 +73,31 @@ export default class Level {
         speed: 175,
         color: "#0CED13",
         teamColor: "#0CED13",
+        stringColor: "green",
         onStairs: true,
-        health: 100,
-        type: "AMMOKEEPER",
-        genId: 2,
-        ammo: 20,
-        id: 2,
-        enemy: 4,
+        type: "",
+        id: 3,
         team: "A",
+        genId: 3,
+        enemy: 7,
+        status: "alive",
+        target:{x: "", y: ""},
+        pathToTarget: null
+      },
+      {
+        pos: { x: 0, y: 0 },
+        size: { x: 12, y: 12 },
+        stringColor: "green",
+        speed: 175,
+        color: "#0CED13",
+        teamColor: "#0CED13",
+        onStairs: true,
+        type: "",
+        genId: 4,
+        id: 4,
+        enemy: 8,
+        team: "A",
+        status: "alive",
         target:{x: "", y: ""},
         pathToTarget: null
       },
@@ -70,16 +105,16 @@ export default class Level {
         pos: { x: 0, y: 0 },
         size: { x: 12, y: 12 },
         speed: 175,
-        genId: 3,
+        genId: 5,
         color: "#1488C5",
         teamColor: "#1488C5",
+        stringColor: "blue",
         onStairs: true,
-        health: 100,
-        type: "HEALTHKEEPER",
-        ammo: 20,
+        type: "",
         enemy: 1,
         id: 1,
         team: "B",
+        status: "alive",
         target:{x: "", y: ""},
         pathToTarget: null
       },
@@ -89,19 +124,55 @@ export default class Level {
         speed: 175,
         color: "#1488C5",
         teamColor: "#1488C5",
-        type: "SURVIVE",
+        stringColor: "blue",
+        type: "",
         onStairs: true,
-        health: 100,
-        ammo: 20,
         id: 2,
         enemy: 2,
-        genId: 4,
+        genId: 6,
         team: "B",
+        status: "alive",
+        target:{x: "", y: ""},
+        pathToTarget: null
+      },
+      {
+        pos: { x: 0, y: 0 },
+        size: { x: 12, y: 12 },
+        speed: 175,
+        genId: 7,
+        color: "#1488C5",
+        teamColor: "#1488C5",
+        stringColor: "blue",
+        onStairs: true,
+        type: "",
+        enemy: 3,
+        id: 3,
+        team: "B",
+        status: "alive",
+        target:{x: "", y: ""},
+        pathToTarget: null
+      },
+      {
+        pos: { x: 0, y: 0 },
+        size: { x: 12, y: 12 },
+        speed: 175,
+        color: "#1488C5",
+        teamColor: "#1488C5",
+        stringColor: "blue",
+        type: "",
+        onStairs: true,
+        id: 4,
+        enemy: 4,
+        genId: 8,
+        team: "B",
+        status: "alive",
         target:{x: "", y: ""},
         pathToTarget: null
       }
     ];
-    console.log(this.dungeon.rooms)
+
+    //set players types randomly
+    this.setTypes();
     //set players initial health and ammo values
     this.setPlayersInfo();
     //place each team in different room at start
@@ -112,8 +183,30 @@ export default class Level {
     for(let i=0; i<this.players.length; i++){
       this.updatePlayerPathToTarget(this.players[i], this.players[i].target)
     }
-    //this.updatePlayerPathToTarget(this.players[2], this.players[2].target)
-   
+    
+  }
+
+  setTypes(){
+    let taken = [];
+    let teamA = this.players.filter(element => element.team === 'A');
+    let teamB = this.players.filter(element => element.team === 'B');
+    let typeNum;
+    for(let i=0; i<teamA.length; i++){
+      do{
+        typeNum = Math.floor(Math.random() * this.types.length);
+      }while(taken.includes(typeNum));
+      teamA[i].type = this.types[typeNum];
+      taken.push(typeNum);
+    }
+    taken = []
+
+    for(let i=0; i<teamB.length; i++){
+      do{
+        typeNum = Math.floor(Math.random() * this.types.length);
+      }while(taken.includes(typeNum));
+      teamB[i].type = this.types[typeNum];
+      taken.push(typeNum);
+    }
   }
 
   setFightRoom(){
@@ -124,15 +217,10 @@ export default class Level {
     for(let i=0; i<teamA.length; i++){
       do{
         roomNum = Math.floor(Math.random() * this.dungeon.maxNumRooms);
-      }while(taken.includes(roomNum));
+      }while(taken.includes(roomNum) || this.dungeon.rooms[roomNum].hasObject === false);
       teamA[i].target = this.dungeon.getRoomPos(this.dungeon.rooms[roomNum], teamA[i]);
       teamB[i].target = this.dungeon.getRoomPos(this.dungeon.rooms[roomNum], teamB[i]);
       taken.push(roomNum);
-      
-     //console.log(this.dungeon.healthTiles)
-     //teamA[i].target = this.dungeon.healthTiles[1];
-     //console.log(this.players[0].target)
-     //teamB[i].target = this.dungeon.healthTiles.shift();
     }
   }
 
@@ -154,7 +242,7 @@ export default class Level {
     let menu = document.getElementById("menu");
     let header = document.createElement('div');
     header.style.marginTop = '10px';
-    header.innerText = "health   ammo";
+    header.innerText = "health  ammo type enemy";
     header.style.marginLeft = "30px";
     menu.appendChild(header);
 
@@ -178,9 +266,23 @@ export default class Level {
       ammo.style.marginLeft = '10px';
       ammo.setAttribute("id", "player"+this.players[i].genId+"ammo");
 
+      let type = document.createElement('div');
+      type.innerText = this.players[i].type;
+      type.style.display = 'inline-block';
+      type.style.marginLeft = '10px';
+      type.setAttribute("id", "player"+this.players[i].genId+"type");
+
+      let enemy = document.createElement('div');
+      enemy.innerText = this.players[i].enemy;
+      enemy.style.display = 'inline-block';
+      enemy.style.marginLeft = '10px';
+      enemy.setAttribute("id", "player"+this.players[i].genId+"enemy");
+
       container.appendChild(playerId);
       container.appendChild(health);
       container.appendChild(ammo);
+      container.appendChild(type)
+      container.appendChild(enemy);
       menu.appendChild(container)
     }
   }
@@ -197,10 +299,16 @@ export default class Level {
   updateHealth(healthVal, player){
     let playerHealth = (document.getElementById("player"+player.genId+"health"));
     let margin = 100 - playerHealth.textContent;
-    if(margin <= healthVal)
-      playerHealth.textContent = 100; 
-    else
-      playerHealth.textContent = parseInt(playerHealth.textContent)+healthVal; 
+    if(parseInt(playerHealth.textContent)+healthVal <= 0){
+      player.status = "dead";
+      playerHealth.textContent = 0;
+    }
+    else{
+      if(margin <= healthVal)
+        playerHealth.textContent = 100; 
+      else
+        playerHealth.textContent = parseInt(playerHealth.textContent)+healthVal; 
+    }
   }
 
   getHealth(player){
@@ -213,6 +321,25 @@ export default class Level {
     playerAmmo.textContent = parseInt(playerAmmo.textContent)+ammoVal; 
   }
 
+  updateEnemy(player){
+    let teamA = this.players.filter(element => element.team === 'A');
+    let teamB = this.players.filter(element => element.team === 'B');
+    let playerEnemy = (document.getElementById("player"+player.genId+"enemy"));
+    let enemyFound = false;
+    for(let i=0; i<this.players.length; i++){
+      if(player.team === 'A' && this.players[i].team === 'B' && this.players[i].status === "alive"){
+        player.enemy = this.players[i].genId;
+        playerEnemy.textContent = this.players[i].genId;
+        enemyFound = true;
+      }else if(player.team === 'B' && this.players[i].team === 'A' && this.players[i].status === "alive"){
+        player.enemy = this.players[i].genId;
+        playerEnemy.textContent = this.players[i].genId;
+        enemyFound = true;
+      }
+    }    
+    return enemyFound;
+  }
+
   
   getAmmo(player){
     let playerAmmo = (document.getElementById("player"+player.genId+"ammo"));
@@ -222,10 +349,23 @@ export default class Level {
   update() {
     //get the next move from global path to target of relevnt player
     //this.players[0].pos = this.moveEntity(this.players[0].pos, this.players[0].size, move);
-    
+    let gameStatus = {active: true, teamWon: ""};
+    for(let i=0; i<this.players.length; i++){
+      let enemy = this.players.find(element => element.genId === this.players[i].enemy);
+      if(enemy.status === "dead"){
+        gameStatus.active = this.updateEnemy(this.players[i]);
+        if(gameStatus.active === false)
+          gameStatus.teamWon = this.players[i].stringColor;
+      }
+    }
+
+    if(gameStatus.active === false){
+      return gameStatus;
+    }
+
     if(this.counter % 2 === 0 || this.counter === 1){
       for(let i=0; i<this.players.length; i++){
-        if(this.players[i].pathToTarget !== null && this.players[i].pathToTarget.length !== 0)
+        if(this.players[i].pathToTarget !== null && this.players[i].pathToTarget.length !== 0 && this.players[i].status !== "dead")
           this.players[i].pos = this.players[i].pathToTarget.shift();
       }
     }
@@ -296,8 +436,9 @@ export default class Level {
         player.color = player.teamColor;
         this.findAmmo(player);
       }
-      else if(distance < 70)
-        this.shoot(player, counter);
+      else if(distance < 70 && this.aStar2(player.pos, enemy.pos, true) !== true){//there is a wall between them - cant shoot
+          this.shoot(player, counter);
+      }
       else{
         player.color = player.teamColor;
         this.updatePlayerPathToTarget(player, enemy.pos);
@@ -309,7 +450,7 @@ export default class Level {
         player.color = player.teamColor;
         this.findHealth(player);
       }
-      else if(distance < 70 && this.getAmmo(player) > 0)
+      else if(distance < 70 && this.getAmmo(player) > 0 && this.aStar2(player.pos, enemy.pos, true) !== true)
         this.shoot(player, counter);
       else if(this.getAmmo(player) === 0)
         this.findAmmo(player);
@@ -319,12 +460,12 @@ export default class Level {
       }
     }
 
-    if(player.type === "AMMOKEEPER"){//fill ammo if ammo < 70, otherwise try to shoot. does not care about health
+    if(player.type === "AMMOKEEPER"){//fill ammo if ammo < 8, otherwise try to shoot. does not care about health
       if(this.getAmmo(player) < 8){
         player.color = player.teamColor;
         this.findAmmo(player);
       }
-      else if(distance < 70 && this.getAmmo(player) > 0)
+      else if(distance < 70 && this.getAmmo(player) > 0 && this.aStar2(player.pos, enemy.pos, true) !== true)
         this.shoot(player, counter);
       else if(this.getAmmo(player) === 0)
         this.findAmmo(player);
@@ -339,7 +480,7 @@ export default class Level {
         player.color = player.teamColor;
         this.runAway(player);
       }
-      else if(distance < 70)
+      else if(distance < 70 && this.aStar2(player.pos, enemy.pos, true) !== true && this.getAmmo(player) > 0)
         this.shoot(player, counter);
       else{
         player.color = player.teamColor;
@@ -399,7 +540,7 @@ export default class Level {
     return false;
   }
   //updates the path of the requested player
-  aStar2(playerPos, targetPos){
+  aStar2(playerPos, targetPos, checkWalls){
     let closedSet = [];
     let startNodeH = Math.sqrt(Math.pow((playerPos.x - targetPos.x),2) + Math.pow((playerPos.y - targetPos.y),2));
     let startNode = {
@@ -484,10 +625,16 @@ export default class Level {
               y:-speed
             }
           }
+        
+        if(checkWalls !== undefined)
+          if(this.moveEntityWithWalls(current, this.players[0].size, {x: neighbor.move.x, y: neighbor.move.y}) === true)
+            return true;  
+
 
         if(this.moveEntity(current, this.players[0].size, {x: neighbor.move.x, y: neighbor.move.y}) === false)
           continue;
         
+          
 
         let tentGScore = current.gScore + 2;
         if(this.isInSet(neighbor, closedSet) === true || tentGScore >= neighbor.gScore)
@@ -687,7 +834,10 @@ export default class Level {
               case tiles.ammo:
                 context.fillStyle = "#4b5320";
                 break;
-            }
+              case tiles.object:
+                context.fillStyle = "black";
+                break;
+          }
 
             // draw the tile
             context.fillRect(x, y, tileSize, tileSize);
@@ -698,17 +848,19 @@ export default class Level {
 
     // draw the players
     for(let i=0; i<this.players.length; i++){
-      context.fillStyle = this.players[i].color;
-      context.fillRect(
-        floor(this.players[i].pos.x - camera.x),
-        floor(this.players[i].pos.y - camera.y),
-        floor(this.players[i].size.x),
-        floor(this.players[i].size.y)
-      );
-      var ctx=canvas.getContext("2d");
-      context.font="12px bold 10pt";
-      context.fillStyle = "blue";
-      context.fillText(this.players[i].genId, this.players[i].pos.x- camera.x+2, this.players[i].pos.y - camera.y+10);
+      if(this.players[i].status !== "dead"){
+        context.fillStyle = this.players[i].color;
+        context.fillRect(
+          floor(this.players[i].pos.x - camera.x),
+          floor(this.players[i].pos.y - camera.y),
+          floor(this.players[i].size.x),
+          floor(this.players[i].size.y)
+        );
+        var ctx=canvas.getContext("2d");
+        context.font="12px bold 10pt";
+        context.fillStyle = "blue";
+        context.fillText(this.players[i].genId, this.players[i].pos.x- camera.x+2, this.players[i].pos.y - camera.y+10);
+      }
     }
   }
 
@@ -744,7 +896,7 @@ export default class Level {
         // go down each of the tiles along the Y axis
         for (let y = start; y < end; y++) {
           // if there is a wall in the tile
-          if (this.collisionMap[y][x] === tiles.wall) {
+          if (this.collisionMap[y][x] === tiles.wall || this.collisionMap[y][x] === tiles.object) {
             // we adjust our end position accordingly
             endPos.x = x * tileSize - offset + (move.x < 0 ? tileSize : 0);
             break;
@@ -773,7 +925,7 @@ export default class Level {
         // go across each of the tiles along the X axis
         for (let x = start; x < end; x++) {
           // if there is a wall in the tile
-          if (this.collisionMap[y][x] === tiles.wall) {
+          if (this.collisionMap[y][x] === tiles.wall || this.collisionMap[y][x] === tiles.object) {
             // we adjust our end position accordingly
             endPos.y = y * tileSize - offset + (move.y < 0 ? tileSize : 0);
             break;
@@ -790,48 +942,17 @@ export default class Level {
     return endPos;
   }
 
-  canMoveEntity(pos, size, move) {
+  moveEntityWithWalls(pos, size, move) {
     // start with the end goal position
     let endPos = {
-      x: move.x,
-      y: move.y,
+      x: pos.x + move.x,
+      y: pos.y + move.y,
     };
-    if(this.collisionMap[endPos.y][endPos.x] === tiles.wall)
-      return false;
-    else
-      return true;
 
-      let offset = move.x > 0 ? size.x : 0;
-      let x = floor((pos.x + move.x + offset) / tileSize);
-
-      // figure out the range of Y tile coordinates that we can collide with
-      let start = floor(pos.y / tileSize);
-      let end = Math.ceil((pos.y + size.y) / tileSize);
-
-      let offsety = move.y > 0 ? size.y : 0;
-      let y = floor((pos.y + move.y + offset) / tileSize);
-
-      // figure out the range of X tile coordinates that we can collide with
-      let starty = floor(endPos.x / tileSize);
-      let endy = Math.ceil((endPos.x + size.x) / tileSize);
-
-      if (
-        (end >= 0 &&
-        start < this.dungeon.size.y &&
-        x >= 0 &&
-        x < this.dungeon.size.x) && (
-          end >= 0 &&
-          start < this.dungeon.size.x &&
-          y >= 0 &&
-          y < this.dungeon.size.y
-        )
-      ){
-        if(this.collisionMap[endPos.y][endPos.x] === tiles.wall)
-          return false;
-        else
-          return true;
-      }else
-        return true;
+    const contEndPos = {
+      x: pos.x + move.x,
+      y: pos.y + move.y,
+    };
 
     // check X axis motion for collisions
     if (move.x) {
@@ -853,7 +974,7 @@ export default class Level {
         // go down each of the tiles along the Y axis
         for (let y = start; y < end; y++) {
           // if there is a wall in the tile
-          if (this.collisionMap[y][x] === tiles.wall) {
+          if (this.collisionMap[y][x] === tiles.wall || this.collisionMap[y][x] === tiles.object) {
             // we adjust our end position accordingly
             endPos.x = x * tileSize - offset + (move.x < 0 ? tileSize : 0);
             break;
@@ -882,7 +1003,7 @@ export default class Level {
         // go across each of the tiles along the X axis
         for (let x = start; x < end; x++) {
           // if there is a wall in the tile
-          if (this.collisionMap[y][x] === tiles.wall) {
+          if (this.collisionMap[y][x] === tiles.wall || this.collisionMap[y][x] === tiles.object) {
             // we adjust our end position accordingly
             endPos.y = y * tileSize - offset + (move.y < 0 ? tileSize : 0);
             break;
@@ -891,6 +1012,10 @@ export default class Level {
       }
     }
 
+    if((contEndPos.x === endPos.x) && (contEndPos.y === endPos.y))
+      return false;
+    else
+      return true;
     // give back the new position for the object
     return endPos;
   }

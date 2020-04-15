@@ -129,10 +129,15 @@ export default class Dungeon {
     for(let i=0; i<this.rooms.length; i++){
       let addAmmo = Math.floor(Math.random() * 2);
       let addMedic = Math.floor(Math.random() * 2);
+      let addObject = Math.floor(Math.random() * 2);
       if(addAmmo)
         this.addStairs(tiles.medic, this.rooms[i]);
       if(addMedic)
         this.addStairs(tiles.ammo, this.rooms[i]);
+      if(addObject){
+        this.addStairs(tiles.object, this.rooms[i]);
+        this.rooms[i].hasObject = true;
+      }
     }
   }
 
